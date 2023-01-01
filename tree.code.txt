@@ -1,0 +1,61 @@
+--create table
+create or replace table job_details(
+job_name varchar(100),
+job_time timestamp,
+remarks varchar(200),
+current_position varchar(200)
+);
+
+--scenario 1 :create task to insert records in table every minute
+create or replace task task1
+warehouse= DBT_WH
+schedule= '1 minute'
+as
+insert into job_details values('task1',current_timestamp(),'task1 data','intern');
+
+show tasks;
+
+--to resume and suspend task
+alter task task1 resume;
+alter task task1 suspend;
+
+select * from job_details order by job_time ;
+
+truncate table job_details;
+--task tree
+--scenario 2 :create task tree to insert records in table every minute using parent and child tasks
+create or replace task task2
+warehouse= DBT_WH
+After task1
+as
+insert into job_details values('task2',current_timestamp(),'task2 data','fresher');
+
+
+create or replace task task3
+warehouse= DBT_WH
+after task1
+as
+insert into job_details values('task3',current_timestamp(),'task3 data','manager');
+
+create or replace task task4
+warehouse= DBT_WH
+after task2
+as
+insert into job_details values('task4',current_timestamp(),'task4 data','sr employee');
+create or replace task task5
+warehouse= DBT_WH
+after task3
+as
+insert into job_details values('task5',current_timestamp(),'task5 data','junior');
+
+--to resume all tasks simualtaneously parent and child
+select system$task_dependents_enable('task1');
+
+
+
+--to suspend all tasks
+alter task task1 suspend;
+alter task task2 suspend;
+alter task task3 suspend;
+alter task task4 suspend;
+alter task task5 suspend;
